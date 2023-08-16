@@ -67,6 +67,7 @@
 		01D73B232A8B5FB000993564 /* FlickrStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickrStore.swift; sourceTree = "<group>"; };
 		01D73B262A8B6DA900993564 /* PhotoDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetails.swift; sourceTree = "<group>"; };
 		01D73B282A8CCE4500993564 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
+		01D73B2A2A8CE49A00993564 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +98,7 @@
 		01D73AD92A8AADA000993564 = {
 			isa = PBXGroup;
 			children = (
+				01D73B2A2A8CE49A00993564 /* README.md */,
 				01D73AE42A8AADA000993564 /* UITableViewCell05 */,
 				01D73AFB2A8AADA200993564 /* UITableViewCell05Tests */,
 				01D73B052A8AADA200993564 /* UITableViewCell05UITests */,
@@ -119,7 +121,6 @@
 			children = (
 				01D73AE52A8AADA000993564 /* AppDelegate.swift */,
 				01D73AE72A8AADA000993564 /* SceneDelegate.swift */,
-				01D73B282A8CCE4500993564 /* Secrets.plist */,
 				01D73B1E2A8AB22400993564 /* Views */,
 				01D73B1A2A8AAF8300993564 /* Utilities.swift */,
 				01D73B252A8B6D7500993564 /* Models */,
@@ -127,6 +128,7 @@
 				01D73AEB2A8AADA000993564 /* Main.storyboard */,
 				01D73AEE2A8AADA200993564 /* Assets.xcassets */,
 				01D73AF02A8AADA200993564 /* LaunchScreen.storyboard */,
+				01D73B282A8CCE4500993564 /* Secrets.plist */,
 				01D73AF32A8AADA200993564 /* Info.plist */,
 			);
 			path = UITableViewCell05;
