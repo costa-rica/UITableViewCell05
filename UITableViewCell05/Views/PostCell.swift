@@ -8,19 +8,29 @@
 import UIKit
 
 class PostCell: UITableViewCell{
-    var requestStore:RequestStore!
+    var flickrStore:FlickrStore!
     var post:Post!
     let screenWidth = UIScreen.main.bounds.width
     var indexPath:IndexPath!
     var stckVwPost=UIStackView()
     var lblUsername=UILabel()
     var dictImgVw:[String:UIImageView]?
+    var imgVwSpinnerHeightConstraint: NSLayoutConstraint?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
     }
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        stckVwPost.removeFromSuperview()
+        lblUsername.removeFromSuperview()
+        if post.imageURL != nil {
+            dictImgVw?[post.imageName!]?.removeFromSuperview()
+        }
     }
     
     func configure(with post:Post){
@@ -34,30 +44,21 @@ class PostCell: UITableViewCell{
 
         stckVwPost.axis = .vertical
         stckVwPost.spacing = 10
-        stckVwPost.backgroundColor = .brown
         stckVwPost.accessibilityIdentifier = "stckVwPost"
         
         lblUsername.text = post.username
         lblUsername.accessibilityIdentifier = "lblUsername"
         stckVwPost.addArrangedSubview(lblUsername)
         
-        if post.image_files_array != nil{
+        if let _ =  post.imageURL{
             print("Download images")
-            
-        } else {
-            print("No spinners")
-            justShowSpinners()
+            dictImgVw=[String:UIImageView]()
+            addImage()
         }
-        print("VieDidLoad finished")
-        listSubviews(of: contentView)
-        print("stckVwPost.subviews")
-        print(stckVwPost.arrangedSubviews)
     }
     
 
-    func justShowSpinners(){
-    dictImgVw=[String:UIImageView]()
-        let imgName = "justSomeSpinner"
+    func justShowSpinners(imgName:String){
         dictImgVw![imgName] = createImgVwSpinner(imageAccessId: imgName)
         addImgVwToStckVwPost(imageAccessId: imgName, imgVw: dictImgVw![imgName]!)
     }
@@ -71,7 +72,7 @@ class PostCell: UITableViewCell{
     func createImgVwSpinner(imageAccessId:String) -> UIImageView {
         
         // Create UIImageView with specified frame
-        let imgVwSpinner = UIImageView(frame: CGRect(x: 0, y: 0, width: screenWidth, height: 250))
+        let imgVwSpinner = UIImageView(frame: CGRect(x: 0, y: 0, width: screenWidth, height: 450))
         imgVwSpinner.backgroundColor = .black
         imgVwSpinner.accessibilityIdentifier = "imgVwSpinner"+imageAccessId
 
@@ -84,70 +85,37 @@ class PostCell: UITableViewCell{
         // Add UIActivityIndicatorView to UIImageView
         imgVwSpinner.addSubview(spinner)
         
+        // Set constraints
         spinner.centerXAnchor.constraint(equalTo: imgVwSpinner.centerXAnchor).isActive=true
         spinner.centerYAnchor.constraint(equalTo: imgVwSpinner.centerYAnchor).isActive=true
-        imgVwSpinner.heightAnchor.constraint(equalToConstant: 250).isActive=true
-        
+        imgVwSpinnerHeightConstraint = imgVwSpinner.heightAnchor.constraint(equalToConstant: 450)
+        imgVwSpinnerHeightConstraint?.priority = UILayoutPriority(rawValue: 999) // Just below the default high priority
+        imgVwSpinnerHeightConstraint?.isActive = true
+
         return imgVwSpinner
     }
-    func listSubviews(of view: UIView, indent: Int = 0) {
-        let indentation = String(repeating: " ", count: indent)
-        
-        if let identifier = view.accessibilityIdentifier {
-            print("\(indentation)\(view) - \(identifier)")
-        } else {
-            print("\(indentation)\(view)")
-        }
-        
-        for subview in view.subviews {
-            listSubviews(of: subview, indent: indent + 2)
+    
+    
+    func addImage(){
+        justShowSpinners(imgName: post.imageName!)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0){
+            self.flickrStore.fetchImageFromWeb(imgURL: self.post.imageURL!) { resultResponse in
+                switch resultResponse{
+                case let .success(uiimage):
+                    self.dictImgVw![self.post.imageName!]?.removeFromSuperview()
+                    self.imgVwSpinnerHeightConstraint?.isActive = false
+                    let resizedUIImage = resizeImageToFitScreenWidth(uiimage)
+                    self.dictImgVw![self.post.imageName!] = UIImageView(image: resizedUIImage)
+                    self.stckVwPost.addArrangedSubview(self.dictImgVw![self.post.imageName!]!)
+                    guard let tbl = self.superview as? UITableView else { return }
+                    tbl.beginUpdates()
+                    tbl.endUpdates()
+                case let .failure(error):
+                    print("Error adding image: \(error)")
+                }
+            }
         }
     }
 }
-
-
-//extension PostCell {
-//
-//
-//    func adjustImageViewHeight(for image: UIImage, image_name:String) {
-//        // If the constraint hasn't been initialized, find it
-//        if imageViewHeightConstraint == nil {
-////            imageViewHeightConstraint = imageView.constraints.first(where: { $0.firstAttribute == .height })
-//            imageViewHeightConstraint = dictImgVw![image_name]!.constraints.first(where: { $0.firstAttribute == .height })
-//        }
-//
-//        let aspectRatio = image.size.width / image.size.height
-//        let newHeight = UIScreen.main.bounds.width / aspectRatio
-//
-//        print("post:\(post.post_id!) newHeight: \(newHeight)")
-//        dictImgVw![image_name]!.accessibilityIdentifier = "resizedImageView"
-//        dictImgVw![image_name]!.backgroundColor = .blue
-//
-//        imageViewHeightConstraint?.constant = newHeight
-//
-//    }
-//
-//
-//    func resizeImageToFitScreenWidth(_ image: UIImage) -> UIImage? {
-//        // Get screen width
-//        let screenWidth = UIScreen.main.bounds.width
-//
-//        // Determine the aspect ratio of the image
-//        let aspectRatio = image.size.width / image.size.height
-//
-//        // Calculate new height using the aspect ratio
-//        let newHeight = screenWidth / aspectRatio
-//
-//        // Resize the image based on new dimensions
-//        let newSize = CGSize(width: screenWidth, height: newHeight)
-//        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-//        image.draw(in: CGRect(origin: CGPoint.zero, size: newSize))
-//
-//        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-//        UIGraphicsEndImageContext()
-//
-//        return resizedImage
-//    }
-//}
 
 

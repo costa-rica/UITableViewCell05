@@ -66,5 +66,40 @@ func heightFromPct(percent:Float) -> CGFloat {
     return height
 }
 
+func listSubviews(of view: UIView, indent: Int = 0) {
+    let indentation = String(repeating: " ", count: indent)
+    
+    if let identifier = view.accessibilityIdentifier {
+        print("\(indentation)\(view) - \(identifier)")
+    } else {
+        print("\(indentation)\(view)")
+    }
+    
+    for subview in view.subviews {
+        listSubviews(of: subview, indent: indent + 2)
+    }
+}
+
+
+func resizeImageToFitScreenWidth(_ image: UIImage) -> UIImage? {
+    // Get screen width
+    let screenWidth = UIScreen.main.bounds.width
+    
+    // Determine the aspect ratio of the image
+    let aspectRatio = image.size.width / image.size.height
+    
+    // Calculate new height using the aspect ratio
+    let newHeight = screenWidth / aspectRatio
+    
+    // Resize the image based on new dimensions
+    let newSize = CGSize(width: screenWidth, height: newHeight)
+    UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+    image.draw(in: CGRect(origin: CGPoint.zero, size: newSize))
+    
+    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    
+    return resizedImage
+}
 
 

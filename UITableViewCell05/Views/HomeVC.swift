@@ -8,46 +8,63 @@
 import UIKit
 
 class HomeVC: UIViewController {
-    var requestStore: RequestStore!
+
     var urlStore:URLStore!
+    var flickrStore:FlickrStore!
     
     let vwVCHeaderOrange = UIView()
     let vwVCHeaderOrangeTitle = UIView()
     let imgVwIconNoName = UIImageView()
     let lblHeaderTitle = UILabel()
-    let btnToTable = UIButton()
     
     var stckVwHome = UIStackView()
-    
+    var lblDescription = UILabel()
+    let btnToTable = UIButton()
     var post1:Post!
     var post2:Post!
     var arryPosts:[Post]!
+    
+    var btnCallFlickrInteresting=UIButton()
+    var dictFlickrImages = [String:URL](){
+        didSet{
+            if dictFlickrImages.count > 0 {
+                setup_stckVwImgList()
+                setup_dummyPosts()
+                removeView(withAccessibilityIdentifier: "lblWarning")
+            }
+        }
+    }
+    var stckVwImgList:UIStackView?
 
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         // Do any additional setup after loading the view.
-        requestStore = RequestStore()
         urlStore = URLStore()
         urlStore.apiBase = APIBase.flickr
-        
+        flickrStore = FlickrStore()
+        flickrStore.requestStore = RequestStore()
+        flickrStore.requestStore.urlStore=urlStore
         setup_vwVCHeaderOrange()
         setup_vwVCHeaderOrangeTitle()
-        setup_moreButtons()
-        setup_dummyPosts()
+        setup_stckVwHome()
+        setup_flickr()
+        setup_appDescription()
+        setup_btnGoToTable()
     }
     
     func setup_dummyPosts(){
-        post1 = Post()
-        post1.post_id = "1"
-        post1.username = "costa-rica"
-        post2 = Post()
-        post2.post_id = "2"
-        post2.username = "costa-rica"
-        post2.image_files_array=["img1"]
-        arryPosts = [post1]
+        arryPosts = [Post]()
+        for (index, img) in dictFlickrImages.enumerated(){
+            let post = Post()
+            post.postId = String(index)
+            post.username = "costa-rica" + post.postId
+            post.imageName = img.key
+            post.imageURL = img.value
+            arryPosts.append(post)
+        }
     }
-    
     
     func setup_vwVCHeaderOrange(){
         view.addSubview(vwVCHeaderOrange)
@@ -86,27 +103,79 @@ class HomeVC: UIViewController {
         lblHeaderTitle.leadingAnchor.constraint(equalTo: imgVwIconNoName.trailingAnchor, constant: widthFromPct(percent: 2.5)).isActive=true
         lblHeaderTitle.centerYAnchor.constraint(equalTo: vwVCHeaderOrangeTitle.centerYAnchor).isActive=true
     }
-    
-    func setup_moreButtons(){
+    func setup_stckVwHome(){
         stckVwHome.translatesAutoresizingMaskIntoConstraints=false
         view.addSubview(stckVwHome)
         stckVwHome.topAnchor.constraint(equalTo: vwVCHeaderOrangeTitle.bottomAnchor, constant: 100).isActive=true
         stckVwHome.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive=true
         stckVwHome.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive=true
         stckVwHome.axis = .vertical
+        stckVwHome.accessibilityIdentifier="stckVwHome"
+    }
+    func setup_appDescription(){
+        lblDescription.text = "This application is designed to test out how a UITableViewCell can be dynamic."
+        lblDescription.numberOfLines=0
+        stckVwHome.insertArrangedSubview(lblDescription, at: 0)
+    }
+    func setup_flickr(){
+        btnCallFlickrInteresting.setTitle("Call For Flickr Images", for: .normal)
+        stckVwHome.addArrangedSubview(btnCallFlickrInteresting)
+        btnCallFlickrInteresting.layer.borderWidth = 2
+        btnCallFlickrInteresting.layer.borderColor = UIColor.blue.cgColor
+        btnCallFlickrInteresting.layer.cornerRadius = 10
+        btnCallFlickrInteresting.addTarget(self, action: #selector(touchDownBtnCallFlickrInteresting), for: .touchDown)
+        btnCallFlickrInteresting.addTarget(self, action: #selector(touchUpInsideBtnCallFlickrInteresting), for: .touchUpInside)
         
+    }
+    @objc func touchDownBtnCallFlickrInteresting(_ sender: UIButton) {
+        UIView.animate(withDuration: 0.1, delay: 0.0, options: [.curveEaseOut], animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        }, completion: nil)
+    }
+    @objc func touchUpInsideBtnCallFlickrInteresting(_ sender: UIButton) {
+        UIView.animate(withDuration: 0.2, delay: 0.0, options: [.curveEaseInOut], animations: {
+            sender.transform = .identity
+        }, completion: nil)
+        flickrStore.fetchInterestingPhotosEndpoint { resultResponse in
+            
+            switch resultResponse{
+            case let .success(flickrResponse):
+                var dictTemp = [String:URL]()
+                for photoDets in flickrResponse.photosInfo.photos{
+                    if let unwp_url = photoDets.url_z{
+                        dictTemp[photoDets.title] = unwp_url
+                    }
+                }
+                self.dictFlickrImages = dictTemp
+
+            case let .failure(error):
+                print("error: \(error)")
+            }
+        }
+    }
+    func setup_stckVwImgList(){
+        stckVwImgList=UIStackView()
+        stckVwImgList?.axis = .vertical
+        
+        for flickrImg in dictFlickrImages{
+            let lbl = UILabel()
+            lbl.text = flickrImg.key
+            stckVwImgList?.addArrangedSubview(lbl)
+        }
+//        for (index, post) in arryPosts.enumerated(){
+//
+//            post.imageName = Array(dictFlickrImages.keys)[index]
+//            post.imageURL = dictFlickrImages[Array(dictFlickrImages.keys)[index]]
+//
+//        }
+        stckVwHome.addArrangedSubview(stckVwImgList!)
+    }
+    func setup_btnGoToTable(){
         btnToTable.setTitle("Go To Table", for: .normal)
         btnToTable.translatesAutoresizingMaskIntoConstraints=false
         stckVwHome.addArrangedSubview(btnToTable)
         btnToTable.addTarget(self, action: #selector(touchDownBtnToTable), for: .touchDown)
         btnToTable.addTarget(self, action: #selector(touchUpInsideBtnToTable), for: .touchUpInside)
-        
-//        btnGetPost.setTitle("Get Posts", for: .normal)
-//        btnGetPost.translatesAutoresizingMaskIntoConstraints=false
-//        stckVwLogin.addArrangedSubview(btnGetPost)
-//        btnGetPost.addTarget(self, action: #selector(touchDownBtnGetPost), for: .touchDown)
-//        btnGetPost.addTarget(self, action: #selector(touchUpInsideBtnGetPost), for: .touchUpInside)
-        
     }
     
     @objc func touchDownBtnToTable(_ sender: UIButton) {
@@ -119,9 +188,19 @@ class HomeVC: UIViewController {
         UIView.animate(withDuration: 0.2, delay: 0.0, options: [.curveEaseInOut], animations: {
             sender.transform = .identity
         }, completion: nil)
-        if sender === btnToTable {
-            print("btnToTable")
-            performSegue(withIdentifier: "goToTableVC", sender: self)
+        if arryPosts != nil{
+            if sender === btnToTable {
+
+//                print("btnToTable")
+                performSegue(withIdentifier: "goToTableVC", sender: self)
+            }
+        }
+        else{
+            let lblWarning = UILabel()
+            lblWarning.text = "No data for UITableView, click call for Flickr Images"
+            lblWarning.textColor = .red
+            lblWarning.accessibilityIdentifier="lblWarning"
+            stckVwHome.addArrangedSubview(lblWarning)
         }
     }
     
@@ -129,8 +208,31 @@ class HomeVC: UIViewController {
         if segue.identifier == "goToTableVC"{
             let tableVC = segue.destination as! TableVC
             tableVC.arryPosts = arryPosts
+            tableVC.flickrStore = flickrStore
+            tableVC.urlStore = urlStore
         }
     }
 
+}
+
+extension UIViewController {
+    func removeView(withAccessibilityIdentifier identifier: String) {
+        for subview in view.subviews {
+            if subview.accessibilityIdentifier != identifier {
+                if subview.subviews.count > 0 {
+                    for subsubview in subview.subviews {
+                        if subsubview.accessibilityIdentifier == identifier {
+                            subsubview.removeFromSuperview()
+                            break
+                        }
+                    }
+                }
+            }
+            if subview.accessibilityIdentifier == identifier {
+                subview.removeFromSuperview()
+                break
+            }
+        }
+    }
 }
 

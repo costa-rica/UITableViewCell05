@@ -9,8 +9,9 @@ import UIKit
 
 class TableVC: UIViewController {
     
-    var requestStore: RequestStore!
+//    var requestStore: RequestStore!
     var urlStore:URLStore!
+    var flickrStore:FlickrStore!
 
     
     let vwVCHeaderOrange = UIView()
@@ -28,15 +29,14 @@ class TableVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        urlStore = URLStore()
-
         
         tbl.delegate = self
         tbl.dataSource = self
+        
         // Register a UITableViewCell
         tbl.register(PostCell.self, forCellReuseIdentifier: "PostCell")
         tbl.rowHeight = UITableView.automaticDimension
-        tbl.estimatedRowHeight = 100
+        tbl.estimatedRowHeight = 500
         
         setup_vwVCHeaderOrange()
         setup_vwVCHeaderOrangeTitle()
@@ -75,7 +75,7 @@ class TableVC: UIViewController {
         imgVwIconNoName.topAnchor.constraint(equalTo: vwVCHeaderOrangeTitle.topAnchor).isActive=true
         imgVwIconNoName.leadingAnchor.constraint(equalTo: vwVCHeaderOrangeTitle.centerXAnchor, constant: widthFromPct(percent: -35) ).isActive = true
         
-        lblHeaderTitle.text = "RinconVC"
+        lblHeaderTitle.text = "TableVC"
         lblHeaderTitle.font = UIFont(name: "Rockwell", size: 35)
         vwVCHeaderOrangeTitle.addSubview(lblHeaderTitle)
         lblHeaderTitle.translatesAutoresizingMaskIntoConstraints=false
@@ -92,16 +92,25 @@ class TableVC: UIViewController {
         stckVwTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive=true
         stckVwTable.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive=true
         stckVwTable.axis = .vertical
-        
+        stckVwTable.spacing = 10
     }
     
     func setupAuxilaryViews() {
+        let lblSpacer = UILabel()
+        stckVwTable.addArrangedSubview(lblSpacer)
+        lblSpacer.heightAnchor.constraint(equalToConstant: 10).isActive=true
+        
+        let lblTableCellRowInfo = UILabel()
+        lblTableCellRowInfo.text = "Select UITableViewCell row:"
+        lblTableCellRowInfo.numberOfLines=0
+        stckVwTable.addArrangedSubview(lblTableCellRowInfo)
+        
         // Configure UIButton
-        btnAuxilary.setTitle("Auxilary Row", for: .normal)
+        btnAuxilary.setTitle("Auxilary Button", for: .normal)
         btnAuxilary.addTarget(self, action: #selector(btnAuxilaryTapped), for: .touchUpInside)
         btnAuxilary.layer.borderWidth = 2
         btnAuxilary.layer.borderColor = UIColor.blue.cgColor
-        btnAuxilary.layer.cornerRadius = 5
+        btnAuxilary.layer.cornerRadius = 10
         
         // Configure UIPickerView
         whlAuxilary.delegate = self
@@ -109,18 +118,14 @@ class TableVC: UIViewController {
         whlAuxilary.heightAnchor.constraint(equalToConstant: 50).isActive=true
         
         // Add views to stckVwAuxilary
-//        stckVwAuxilary.axis = .vertical
         stckVwAuxilary.addArrangedSubview(btnAuxilary)
         stckVwAuxilary.addArrangedSubview(whlAuxilary)
         stckVwAuxilary.distribution = .fillEqually
         
-
-        
         // Add stckVwAuxilary to top of stckVwRincon
-        stckVwTable.insertArrangedSubview(stckVwAuxilary, at: 0)
+//        stckVwTable.insertArrangedSubview(stckVwAuxilary, at: 1)
+        stckVwTable.addArrangedSubview(stckVwAuxilary)
     }
-
-    
 
     @objc func btnAuxilaryTapped() {
         let selectedRowIndex = whlAuxilary.selectedRow(inComponent: 0)
@@ -130,16 +135,10 @@ class TableVC: UIViewController {
             let postToReload = arryPosts[selectedRowIndex]
             
             // Assuming you have a method or way to get IndexPath from post_id
-            if let indexPath = getIndexPathForPostID(postToReload.post_id) {
-//                tblRincon.reloadRows(at: [indexPath], with: .automatic)
+            if let indexPath = getIndexPathForPostID(postToReload.postId) {
                 let current_post_cell = tbl.cellForRow(at: indexPath) as! PostCell
-                print("current_post_cell_stckVwPost.height: \(current_post_cell.stckVwPost.frame.size)")
-                print(current_post_cell.stckVwPost.arrangedSubviews)
-                
-
-                print("------------")
-                
-//                listSubviews(of: current_post_cell.contentView)
+                print("-PostCell SubViews-----------")
+                listSubviews(of: current_post_cell.contentView)
                 print("------------")
 
                 
@@ -150,25 +149,12 @@ class TableVC: UIViewController {
 
     // Sample method to get IndexPath from post_id
     func getIndexPathForPostID(_ postID: String) -> IndexPath? {
-        if let index = arryPosts.firstIndex(where: { $0.post_id == postID }) {
+        if let index = arryPosts.firstIndex(where: { $0.postId == postID }) {
             return IndexPath(row: index, section: 0)
         }
         return nil
     }
     
-//    func listSubviews(of view: UIView, indent: Int = 0) {
-//        let indentation = String(repeating: " ", count: indent)
-//
-//        if let identifier = view.accessibilityIdentifier {
-//            print("\(indentation)\(view) - \(identifier)")
-//        } else {
-//            print("\(indentation)\(view)")
-//        }
-//
-//        for subview in view.subviews {
-//            listSubviews(of: subview, indent: indent + 2)
-//        }
-//    }
 
 
 }
@@ -186,7 +172,8 @@ extension TableVC: UITableViewDataSource{
         let cell = tableView.dequeueReusableCell(withIdentifier: "PostCell", for:indexPath) as! PostCell
         
         let current_post = arryPosts[indexPath.row]
-        cell.requestStore = requestStore
+//        cell.requestStore = requestStore
+        cell.flickrStore = flickrStore
 
         cell.indexPath = indexPath
         cell.configure(with: current_post)
@@ -209,7 +196,7 @@ extension TableVC: UIPickerViewDelegate, UIPickerViewDataSource {
     }
     
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        return arryPosts[row].post_id
+        return arryPosts[row].postId
     }
 }
 

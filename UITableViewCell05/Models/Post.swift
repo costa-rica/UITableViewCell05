@@ -8,8 +8,8 @@
 import Foundation
 
 class Post: Codable{
-    var post_id: String!
+    var postId: String!
     var username: String!
-    var image_name:String?
-    var image_files_array:[String]?
+    var imageName:String?
+    var imageURL:URL?
 }

@@ -6,7 +6,15 @@
 //
 
 import UIKit
-
+enum RequestStoreError: Error{
+    case failedToReceiveImage
+    
+    var localizedDescription: String {
+        switch self {
+        default: return "Error calling API"
+        }
+    }
+}
 class RequestStore{
     
     var urlStore:URLStore!
@@ -22,29 +30,9 @@ class RequestStore{
         self.documentsURL = self.fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
-    
-    func createRequest(endpoint:EndPoint, dictString:[String:String]?)->URLRequest{
-        let url = urlStore.createUrl(endPoint: endpoint)
-        var request = URLRequest(url:url)
-        request.httpMethod = "POST"
-        request.addValue("application/json",forHTTPHeaderField: "Content-Type")
-        
-        var combinedDict: [String: Any] = [:]
-        
-        // Add dictString data if present
-        if let dict = dictString {
-            for (key, value) in dict {
-                combinedDict[key] = value
-            }
-        }
-                
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: combinedDict, options: [])
-            request.httpBody = jsonData
-        } catch {
-            print("Error creating JSON data: \(error)")
-        }
-        
+    func createRequestFlickr(dictBody:[String:String])->URLRequest{
+        let url = urlStore.createUrlWithComponentsForFlickr(dictBody:dictBody)
+        let request = URLRequest(url:url)
         return request
     }
 }
